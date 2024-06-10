@@ -5,17 +5,18 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const cors = require('cors');
 
-// Configuration CORS pour autoriser votre front-end spécifique
 app.use(cors({
   origin: "https://poc-fighter-navigator-front.vercel.app"
 }));
 
 const io = new Server(server, {
+  pingTimeout: 60000,
   cors: {
     origin: "https://poc-fighter-navigator-front.vercel.app",
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST"],
+    credentials: true
   },
-  transports: ['websocket', 'polling'] // WebSocket d'abord, puis fallback vers polling
+  transports: ['websocket', 'polling']
 });
 
 app.get('/', (req, res) => {
