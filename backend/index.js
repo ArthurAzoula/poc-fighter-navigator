@@ -5,7 +5,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
-    origin: "https://poc-fighter-navigator-dh9l.vercel.app/",
+    origin: "https://poc-fighter-navigator-front.vercel.app/",
     methods: ["GET", "POST"]
   }
 });
@@ -13,6 +13,10 @@ const io = new Server(server, {
 app.get('/', (req, res) => {
   res.send('<h1>Hello world</h1>');
 });
+
+app.get('/test', (req, res) => {
+  res.send('<p>test new route</p>');
+})
 
 io.on('connection', (socket) => {
   console.log('a user connected');
