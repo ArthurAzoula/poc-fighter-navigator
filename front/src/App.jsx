@@ -11,7 +11,9 @@ const App = () => {
     const [player, setPlayer] = useState({ id: socket.id, x: 100, y: 100 });
     const [otherPlayers, setOtherPlayers] = useState([]);
     const [ping, setPing] = useState(0);
-    const pingStartRef = useRef(null);  // Utilisez useRef pour stocker pingStart
+    const pingStartRef = useRef(null); 
+    const playerRef = useRef(player); 
+    const otherPlayersRef = useRef([]); 
 
     useEffect(() => {
         const handleMove = (data) => {
@@ -35,8 +37,16 @@ const App = () => {
         };
     }, []);
 
+    useEffect(() => {
+        playerRef.current = player;
+    }, [player]);
+
+    useEffect(() => {
+        otherPlayersRef.current = otherPlayers;
+    }, [otherPlayers]);
+
     const handleKeyDown = (event) => {
-        const newPlayer = { ...player };
+        const newPlayer = { ...playerRef.current };
 
         switch (event.key) {
             case 'ArrowUp':
@@ -65,9 +75,19 @@ const App = () => {
     }, []);
 
     useEffect(() => {
-        const interval = setInterval(pingServer, 1000); // Ping every second
+        const interval = setInterval(pingServer, 1000);
         return () => clearInterval(interval);
     }, [pingServer]);
+
+    const gameLoop = useCallback(() => {
+        setPlayer((prevPlayer) => ({ ...prevPlayer }));
+        
+        requestAnimationFrame(gameLoop);
+    }, []);
+
+    useEffect(() => {
+        gameLoop();
+    }, [gameLoop]);
 
     return (
         <div className="App" onKeyDown={handleKeyDown} tabIndex="0">
