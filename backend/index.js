@@ -22,6 +22,10 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('move', data);
     })
 
+    socket.on('ping', () => {
+      socket.emit('pong');
+    })
+
 });
 
 server.listen(3000, () => {
