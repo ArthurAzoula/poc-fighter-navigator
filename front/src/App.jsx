@@ -5,7 +5,7 @@ import { Stage, Sprite, Text } from '@pixi/react';
 import io from 'socket.io-client';
 import './App.css';
 
-const socket = io('http://localhost:3000');
+const socket = io('https://poc-fighter-navigator-back.vercel.app/');
 
 const App = () => {
     const [player, setPlayer] = useState({ id: socket.id, x: 100, y: 100 });
