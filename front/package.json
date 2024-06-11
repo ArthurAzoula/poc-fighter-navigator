@@ -1,5 +1,6 @@
 {
   "name": "front",
+  "homepage": "https://raptor-fight.bryan-ferrando.fr",
   "private": true,
   "version": "0.0.0",
   "type": "module",

@@ -5,7 +5,7 @@ import { Stage, Sprite, Text } from '@pixi/react';
 import io from 'socket.io-client';
 import './App.css';
 
-const socket = io('https://poc-fighter-navigator-back.vercel.app/', 
+const socket = io('https://api.raptor-fight.bryan-ferrando.fr', 
     {
         reconnection: true,
         reconnectionAttempts: Infinity,
