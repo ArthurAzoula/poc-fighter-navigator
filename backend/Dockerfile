@@ -1,27 +1,19 @@
-FROM ubuntu:22.04
+FROM node:18-bullseye AS build
 
-RUN apt-get update && apt-get -y install sudo
+WORKDIR /usr/src/app
+COPY . .
 
-RUN useradd -m ubuntu && echo "ubuntu:ubuntu" | chpasswd && adduser ubuntu sudo
+RUN apt update -yq && apt upgrade -yq
 
-RUN sudo apt install curl -yq && sudo apt install cmake -yq
+RUN rm -rf node_modules
+RUN npm install
+RUN npm prune --production
 
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && \
-    sudo apt-get install -y nodejs && \
-    sudo npm install -g npm@latest && \
-    sudo npm install -g gitget@latest
-
-USER ubuntu
-
-RUN cd /home/ubuntu && \
-    gitget ArthurAzoula/poc-fighter-navigator && \
-    cd poc-fighter-navigator && \
-    npm install
-
-WORKDIR /home/ubuntu/poc-fighter-navigator
-
+FROM node:18-bullseye
 ENV NODE_ENV=production
 
-RUN npm run build
+WORKDIR /usr/src/app
+COPY --from=build /usr/src/app .
+COPY --from=build /usr/src/app/node_modules ./node_modules
 
-CMD ["node", "index.js"]
+CMD node index.mjs

@@ -13,8 +13,12 @@ const App = () => {
     const channelRef = useRef(null);
 
     useEffect(() => {
+        if (channelRef.current) {
+            return;
+        }
+        
         console.log('Connecting to the server');
-        const channel = geckos({port: 3000, url: 'http://localhost' });
+        const channel = geckos({port: 3000 });
         console.log('channel:', channel);
         channelRef.current = channel;
         
