@@ -1,51 +1,48 @@
-const express = require('express');
-const app = express();
 const http = require('http');
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-const cors = require('cors');
+const express = require('express');
 
-app.use(cors({
-  origin: "https://poc-fighter-navigator-front.vercel.app"
-}));
+const setup = async () => {
+  const geckos = await import('@geckos.io/server');
+  const app = express();
+  const server = http.createServer(app);
+  const io = geckos.geckos();
 
-const io = new Server(server, {
-  pingTimeout: 60000,
-  cors: {
-    origin: "https://poc-fighter-navigator-front.vercel.app",
-    methods: ["GET", "POST"],
-    credentials: true
-  },
-  transports: ['websocket', 'polling']
-});
+  io.addServer(server);
 
-app.get('/', (req, res) => {
-  res.send('<h1>Hello world</h1>');
-});
+  let players = {};
 
-app.get('/test', (req, res) => {
-  res.send('<p>test new route</p>');
-})
+  io.onConnection((channel) => {
+    console.log(`Player connected: ${channel.id}`);
 
-io.on('connection', (socket) => {
-  console.log('a user connected');
+    players[channel.id] = { x: 10, y: 10 };
 
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+    channel.emit('playersUpdate', players);
+
+    channel.on('playerMove', (data) => {
+      if (players[channel.id]) {
+        players[channel.id] = data;
+        io.emit('playersUpdate', players);
+      }
+    });
+
+    channel.on('ping', (data) => {
+      channel.emit('pong', data);
+    });
+
+    channel.onDisconnect(() => {
+      delete players[channel.id];
+      io.emit('playersUpdate', players);
+      console.log(`Player disconnected: ${channel.id}`);
+    });
   });
 
-  socket.on('move', (data) => {
-    console.log('move', data);
-    socket.broadcast.emit('move', data);
+  app.get('/', (req, res) => {
+    res.send(geckos.toString() ?? 'Hello, world!');
   });
 
-  socket.on('ping', () => {
-    socket.emit('pong');
+  server.listen(3000, () => {
+    console.log('Server is listening on port 3000');
   });
-});
+};
 
-// Utilisation de la variable d'environnement PORT fournie par Vercel
-const port = process.env.PORT || 3000;
-server.listen(port, () => {
-  console.log(`listening on *:${port}`);
-});
+setup();

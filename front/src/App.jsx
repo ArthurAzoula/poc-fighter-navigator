@@ -1,108 +1,79 @@
-// src/App.js
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import * as PIXI from 'pixi.js';
+import { useEffect, useState, useRef } from 'react';
 import { Stage, Sprite, Text } from '@pixi/react';
-import io from 'socket.io-client';
+import geckos from '@geckos.io/client';
 import './App.css';
 
-const socket = io('https://api.raptor-fight.bryan-ferrando.fr', 
-    {
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000
-    }
-);
-
 const App = () => {
-    const [player, setPlayer] = useState({ id: socket.id, x: 100, y: 100 });
-    const [otherPlayers, setOtherPlayers] = useState([]);
-    const [ping, setPing] = useState(0);
-    const pingStartRef = useRef(null); 
-    const playerRef = useRef(player); 
-    const otherPlayersRef = useRef([]); 
+    const [ping, setPing] = useState(-1);
+    const [player, setPlayer] = useState({ x: 10, y: 10 });
+    console.log('player:', player);
+    const [otherPlayers, setOtherPlayers] = useState({});
+    console.log('otherPlayers:', Object.keys(otherPlayers).length);
+    const playerId = useRef(null);
+    const channelRef = useRef(null);
 
     useEffect(() => {
-        const handleMove = (data) => {
-            setOtherPlayers((currentPlayers) => {
-                const updatedPlayers = currentPlayers.filter(p => p.id !== data.id);
-                return [...updatedPlayers, data];
+        const channel = geckos({port: 3000, url: 'https://api.raptor-fight.bryan-ferrando.fr' });
+        channelRef.current = channel;
+
+        channel.onConnect(error => {
+            if (error) {
+                console.error(error.message);
+                return;
+            }
+            console.log('Connected to the server');
+        
+        });
+        
+        channel.on('pong', data => {
+            setPing(new Date() - new Date(data));
+        });
+
+        channel.on('playersUpdate', data => {
+            setOtherPlayers(data);
+        });
+
+        const handleKeyDown = (e) => {
+            setPlayer(p => {
+                if (e.key === 'ArrowUp') p.y -= 5;
+                if (e.key === 'ArrowDown') p.y += 5;
+                if (e.key === 'ArrowLeft') p.x -= 5;
+                if (e.key === 'ArrowRight') p.x += 5;
+                
+                channel.emit('playerMove', p);
+                return p;
             });
         };
+        
+        const interval = setInterval(() => {
+            channel.emit('ping', new Date());
+        }, 1000);
 
-        const handlePong = () => {
-            const latency = Date.now() - pingStartRef.current;
-            setPing(latency);
-        };
-
-        socket.on('move', handleMove);
-        socket.on('pong', handlePong);
+        window.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            socket.off('move', handleMove);
-            socket.off('pong', handlePong);
+            window.removeEventListener('keydown', handleKeyDown);
+            clearInterval(interval);
         };
     }, []);
 
-    useEffect(() => {
-        playerRef.current = player;
-    }, [player]);
-
-    useEffect(() => {
-        otherPlayersRef.current = otherPlayers;
-    }, [otherPlayers]);
-
-    const handleKeyDown = (event) => {
-        const newPlayer = { ...playerRef.current };
-
-        switch (event.key) {
-            case 'ArrowUp':
-                newPlayer.y -= 5;
-                break;
-            case 'ArrowDown':
-                newPlayer.y += 5;
-                break;
-            case 'ArrowLeft':
-                newPlayer.x -= 5;
-                break;
-            case 'ArrowRight':
-                newPlayer.x += 5;
-                break;
-            default:
-                break;
-        }
-
-        setPlayer(newPlayer);
-        socket.emit('move', newPlayer);
-    };
-
-    const pingServer = useCallback(() => {
-        pingStartRef.current = Date.now();
-        socket.emit('ping');
-    }, []);
-
-    useEffect(() => {
-        const interval = setInterval(pingServer, 1000);
-        return () => clearInterval(interval);
-    }, [pingServer]);
-
-    const gameLoop = useCallback(() => {
-        setPlayer((prevPlayer) => ({ ...prevPlayer }));
-        
-        requestAnimationFrame(gameLoop);
-    }, []);
-
-    useEffect(() => {
-        gameLoop();
-    }, [gameLoop]);
-
     return (
-        <div className="App" onKeyDown={handleKeyDown} tabIndex="0">
+        <div className="App" tabIndex="0">
             <Stage width={800} height={600} options={{ backgroundColor: 0x10bb99 }}>
-                <Sprite image="https://pixijs.io/pixi-react/img/bunny.png" x={player.x} y={player.y} />
-                {otherPlayers.map((p) => (
-                    <Sprite key={p.id} image="https://pixijs.io/pixi-react/img/bunny.png" x={p.x} y={p.y} />
+                {Object.keys(otherPlayers).map((id) => (
+                    <Sprite
+                        key={id}
+                        image="https://pixijs.io/pixi-react/img/bunny.png"
+                        x={otherPlayers[id].x}
+                        y={otherPlayers[id].y}
+                    />
                 ))}
-                <Text text={`Ping: ${ping} ms`} x={10} y={10} style={{ fill: 'white', fontSize: 20 }} />
+                <Text
+                    text={`Ping: ${ping} ms`}
+                    x={10}
+                    y={10}
+                    style={{ fill: 'white', fontSize: 20 }}
+                />
             </Stage>
         </div>
     );
