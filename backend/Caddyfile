@@ -1,0 +1,11 @@
+{
+  servers {
+    protocol {
+      experimental_http3
+    }
+  }
+}
+
+:3001 {
+  reverse_proxy app:3000
+}

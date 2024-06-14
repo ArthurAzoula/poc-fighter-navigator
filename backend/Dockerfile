@@ -1,19 +1,13 @@
-FROM node:18-bullseye AS build
+FROM node:14
 
-WORKDIR /usr/src/app
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
 COPY . .
 
-RUN apt update -yq && apt upgrade -yq
+EXPOSE 3000
 
-RUN rm -rf node_modules
-RUN npm install
-RUN npm prune --production
-
-FROM node:18-bullseye
-ENV NODE_ENV=production
-
-WORKDIR /usr/src/app
-COPY --from=build /usr/src/app .
-COPY --from=build /usr/src/app/node_modules ./node_modules
-
-CMD node index.mjs
+CMD ["npm", "start"]

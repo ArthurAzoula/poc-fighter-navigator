@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@geckos.io/client": "^3.0.0",
+    "@geckos.io/client": "^2.3.2",
     "@pixi/react": "^7.1.2",
     "pixi.js": "^8.1.6",
     "react": "^18.2.0",

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Stage, Sprite, Text } from '@pixi/react';
 import geckos from '@geckos.io/client';
 import './App.css';
+import { initializeWebRTC, receiveMessage, sendMessage } from './webrtc';
 
 const App = () => {
     const [ping, setPing] = useState(-1);
@@ -13,56 +14,70 @@ const App = () => {
     const channelRef = useRef(null);
 
     useEffect(() => {
-        if (channelRef.current) {
-            return;
-        }
-        
-        console.log('Connecting to the server');
-        const channel = geckos({port: 3000 });
-        console.log('channel:', channel);
-        channelRef.current = channel;
-        
-        channel.onConnect(error => {
-            if (error) {
-                console.error('error:', error.message);
-                return;
-            }
-            console.log('Connected to the server');
-        
+        initializeWebRTC().then((peer) => {
+            console.log('peer:', peer);
+            channelRef.current = peer;
+        }).catch((error) => {
+            console.error('Erreur lors de l\'initialisation de WebRTC:', error);
         });
-        
-        channel.on('pong', data => {
-            setPing(new Date() - new Date(data));
-        });
-
-        channel.on('playersUpdate', data => {
-            setOtherPlayers(data);
-        });
-
-        const handleKeyDown = (e) => {
-            setPlayer(p => {
-                console.log('p:', p);
-                if (e.key === 'ArrowUp') p.y -= 5;
-                if (e.key === 'ArrowDown') p.y += 5;
-                if (e.key === 'ArrowLeft') p.x -= 5;
-                if (e.key === 'ArrowRight') p.x += 5;
-                
-                channel.emit('playerMove', p);
-                return p;
-            });
-        };
-        
-        const interval = setInterval(() => {
-            channel.emit('ping', new Date());
-        }, 1000);
-
-        window.addEventListener('keydown', handleKeyDown);
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            clearInterval(interval);
-        };
     }, []);
+    
+    useEffect(() => {
+        console.log('channelRef:', channelRef.current);
+        sendMessage('ping');
+        receiveMessage((message) => {
+            console.log('Message reçu:', message);
+        });
+    }, [channelRef]);
+    
+    // useEffect(() => {        
+    //     console.log('Connecting to the server');
+    //     const channel = geckos({port: 3000 });
+    //     console.log('channel:', channel);
+    //     channelRef.current = channel;
+        
+    //     channel.onConnect(error => {
+    //         if (error) {
+    //             console.error('error:', error.message);
+    //             return;
+    //         }
+    //         console.log('Connected to the server');
+        
+    //     });
+        
+    //     channel.on('pong', data => {
+    //         console.log('data:', data);
+    //         setPing(new Date() - new Date(data));
+    //     });
+
+    //     channel.on('playersUpdate', data => {
+    //         setOtherPlayers(data);
+    //     });
+
+    //     const handleKeyDown = (e) => {
+    //         setPlayer(p => {
+    //             console.log('p:', p);
+    //             if (e.key === 'ArrowUp') p.y -= 5;
+    //             if (e.key === 'ArrowDown') p.y += 5;
+    //             if (e.key === 'ArrowLeft') p.x -= 5;
+    //             if (e.key === 'ArrowRight') p.x += 5;
+                
+    //             channel.emit('playerMove', p);
+    //             return p;
+    //         });
+    //     };
+        
+    //     const interval = setInterval(() => {
+    //         channel.emit('ping', new Date());
+    //     }, 1000);
+
+    //     window.addEventListener('keydown', handleKeyDown);
+
+    //     return () => {
+    //         window.removeEventListener('keydown', handleKeyDown);
+    //         clearInterval(interval);
+    //     };
+    // }, []);
 
     return (
         <div className="App" tabIndex="0">
