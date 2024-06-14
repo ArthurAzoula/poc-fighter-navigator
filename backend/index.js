@@ -1,13 +1,6 @@
-const http = require('http');
-const express = require('express');
-
 const setup = async () => {
   const geckos = await import('@geckos.io/server');
-  const app = express();
-  const server = http.createServer(app);
   const io = geckos.geckos();
-
-  io.addServer(server);
 
   let players = {};
 
@@ -26,7 +19,7 @@ const setup = async () => {
     });
 
     channel.on('ping', (data) => {
-      channel.emit('pong', data);
+      channel.broadcast.emit('pong', data);
     });
 
     channel.onDisconnect(() => {
@@ -35,14 +28,8 @@ const setup = async () => {
       console.log(`Player disconnected: ${channel.id}`);
     });
   });
-
-  app.get('/', (req, res) => {
-    res.send(geckos.toString() ?? 'Hello, world!');
-  });
-
-  server.listen(3000, () => {
-    console.log('Server is listening on port 3000');
-  });
+  
+  io.listen(3000)
 };
 
 setup();

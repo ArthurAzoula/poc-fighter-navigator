@@ -13,12 +13,14 @@ const App = () => {
     const channelRef = useRef(null);
 
     useEffect(() => {
-        const channel = geckos({port: 3000, url: 'https://api.raptor-fight.bryan-ferrando.fr' });
+        console.log('Connecting to the server');
+        const channel = geckos({port: 3000, url: 'http://localhost' });
+        console.log('channel:', channel);
         channelRef.current = channel;
-
+        
         channel.onConnect(error => {
             if (error) {
-                console.error(error.message);
+                console.error('error:', error.message);
                 return;
             }
             console.log('Connected to the server');
@@ -35,6 +37,7 @@ const App = () => {
 
         const handleKeyDown = (e) => {
             setPlayer(p => {
+                console.log('p:', p);
                 if (e.key === 'ArrowUp') p.y -= 5;
                 if (e.key === 'ArrowDown') p.y += 5;
                 if (e.key === 'ArrowLeft') p.x -= 5;
@@ -59,7 +62,7 @@ const App = () => {
 
     return (
         <div className="App" tabIndex="0">
-            <Stage width={800} height={600} options={{ backgroundColor: 0x10bb99 }}>
+            <Stage width={800} height={400} options={{ backgroundColor: 0x10bb99 }}>
                 {Object.keys(otherPlayers).map((id) => (
                     <Sprite
                         key={id}
