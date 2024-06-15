@@ -1,5 +1,20 @@
 services:
-  app:
-    build: ./backend
+  backend:
+    build:
+      context: ./backend
     ports:
-      - "12345:12345/udp"
+      - "3000:3000"
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    command: node server.mjs
+  
+  front:
+    build:
+      context: ./front
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./front:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run dev

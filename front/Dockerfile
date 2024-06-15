@@ -13,11 +13,8 @@ RUN npm install
 # Copier le reste de l'application
 COPY . .
 
-# Recompiler les modules natifs
-RUN npm rebuild
-
 # Exposer le port sur lequel l'application sera accessible
-EXPOSE 3000
+EXPOSE 3001
 
-# Commande pour démarrer l'application
-CMD ["npm", "start"]
+# Commande pour démarrer l'application avec Vite
+CMD ["npm", "run", "dev"]

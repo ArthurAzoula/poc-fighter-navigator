@@ -1,104 +1,103 @@
-import { useEffect, useState, useRef } from 'react';
-import { Stage, Sprite, Text } from '@pixi/react';
+import { useEffect, useState } from 'react';
 import geckos from '@geckos.io/client';
-import './App.css';
-import { initializeWebRTC, receiveMessage, sendMessage } from './webrtc';
 
 const App = () => {
-    const [ping, setPing] = useState(-1);
-    const [player, setPlayer] = useState({ x: 10, y: 10 });
-    console.log('player:', player);
-    const [otherPlayers, setOtherPlayers] = useState({});
-    console.log('otherPlayers:', Object.keys(otherPlayers).length);
-    const playerId = useRef(null);
-    const channelRef = useRef(null);
+  const [players, setPlayers] = useState({});
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [ping, setPing] = useState(null);
+  const [channel, setChannel] = useState(null);
 
-    useEffect(() => {
-        initializeWebRTC().then((peer) => {
-            console.log('peer:', peer);
-            channelRef.current = peer;
-        }).catch((error) => {
-            console.error('Erreur lors de l\'initialisation de WebRTC:', error);
-        });
-    }, []);
-    
-    useEffect(() => {
-        console.log('channelRef:', channelRef.current);
-        sendMessage('ping');
-        receiveMessage((message) => {
-            console.log('Message reçu:', message);
-        });
-    }, [channelRef]);
-    
-    // useEffect(() => {        
-    //     console.log('Connecting to the server');
-    //     const channel = geckos({port: 3000 });
-    //     console.log('channel:', channel);
-    //     channelRef.current = channel;
-        
-    //     channel.onConnect(error => {
-    //         if (error) {
-    //             console.error('error:', error.message);
-    //             return;
-    //         }
-    //         console.log('Connected to the server');
-        
-    //     });
-        
-    //     channel.on('pong', data => {
-    //         console.log('data:', data);
-    //         setPing(new Date() - new Date(data));
-    //     });
+  useEffect(() => {
+    const newChannel = geckos({ port: 3000 });
+    console.log('newChannel:', newChannel);
+    newChannel.on('error', (error) => {
+        console.error('Error:', error);
+    });
 
-    //     channel.on('playersUpdate', data => {
-    //         setOtherPlayers(data);
-    //     });
+    newChannel.onConnect(() => {
+      console.log('Connected to server');
+      setChannel(newChannel);
 
-    //     const handleKeyDown = (e) => {
-    //         setPlayer(p => {
-    //             console.log('p:', p);
-    //             if (e.key === 'ArrowUp') p.y -= 5;
-    //             if (e.key === 'ArrowDown') p.y += 5;
-    //             if (e.key === 'ArrowLeft') p.x -= 5;
-    //             if (e.key === 'ArrowRight') p.x += 5;
-                
-    //             channel.emit('playerMove', p);
-    //             return p;
-    //         });
-    //     };
-        
-    //     const interval = setInterval(() => {
-    //         channel.emit('ping', new Date());
-    //     }, 1000);
+      newChannel.on('playerMoved', (data) => {
+        setPlayers((prevPlayers) => ({
+          ...prevPlayers,
+          [data.id]: data.position
+        }));
+      });
 
-    //     window.addEventListener('keydown', handleKeyDown);
+      newChannel.on('pong', (data) => {
+        const now = Date.now();
+        setPing(now - data.sentAt);
+      });
+    });
 
-    //     return () => {
-    //         window.removeEventListener('keydown', handleKeyDown);
-    //         clearInterval(interval);
-    //     };
-    // }, []);
+    return () => {
+      if (channel) {
+        channel.disconnect();
+      }
+    };
+  }, []);
 
-    return (
-        <div className="App" tabIndex="0">
-            <Stage width={800} height={400} options={{ backgroundColor: 0x10bb99 }}>
-                {Object.keys(otherPlayers).map((id) => (
-                    <Sprite
-                        key={id}
-                        image="https://pixijs.io/pixi-react/img/bunny.png"
-                        x={otherPlayers[id].x}
-                        y={otherPlayers[id].y}
-                    />
-                ))}
-                <Text
-                    text={`Ping: ${ping} ms`}
-                    x={10}
-                    y={10}
-                    style={{ fill: 'white', fontSize: 20 }}
-                />
-            </Stage>
-        </div>
-    );
+  useEffect(() => {
+    if (channel) {
+      const sendPing = () => {
+        channel.emit('ping', { sentAt: Date.now() });
+      };
+
+      const pingInterval = setInterval(sendPing, 1000);
+
+      const handleKeyDown = (e) => {
+        let newPosition = { ...position };
+        switch (e.key) {
+          case 'ArrowUp':
+            newPosition.y -= 10;
+            break;
+          case 'ArrowDown':
+            newPosition.y += 10;
+            break;
+          case 'ArrowLeft':
+            newPosition.x -= 10;
+            break;
+          case 'ArrowRight':
+            newPosition.x += 10;
+            break;
+          default:
+            break;
+        }
+        setPosition(newPosition);
+        channel.emit('move', newPosition);
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        clearInterval(pingInterval);
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [channel, position]);
+
+  return (
+    <div style={{marginLeft: '100px'}}>
+      <h1>Geckos.io Game</h1>
+      <div>Ping: {ping ? `${ping} ms` : 'Calculating...'}</div>
+      <div style={{ position: 'relative', width: '500px', height: '500px', border: '1px solid black' }}>
+        {Object.keys(players).map((id) => (
+          <div
+            key={id}
+            style={{
+              position: 'absolute',
+              left: `${players[id].x}px`,
+              top: `${players[id].y}px`,
+              width: '10px',
+              height: '10px',
+              backgroundColor: 'red'
+            }}
+          ></div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default App;

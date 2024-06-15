@@ -11,6 +11,10 @@ export default defineConfig({
       exclude: []
     })
   ],
+  server: {
+    host: true,
+    port: 3001
+  },
   define: {
     // global: {}
   },
