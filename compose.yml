@@ -13,11 +13,11 @@ services:
     build:
       context: ./front
     ports:
-      - "3001:3001"
+      - "8080:8080"
     volumes:
       - ./front:/usr/src/app
       - /usr/src/app/node_modules
-    command: npm run dev
+    command: npm run preview
   
   turnserver:
     build:

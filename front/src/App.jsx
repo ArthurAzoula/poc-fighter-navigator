@@ -86,7 +86,7 @@ const App = () => {
 
   return (
     <div style={{marginLeft: '100px'}}>
-      <h1>Geckos.io Game</h1>
+      <h1>{`Geckos.io Game (${import.meta.env.MODE})`}</h1>
       <div>Ping: {ping ? `${ping} ms` : 'Calculating...'}</div>
       <div style={{ position: 'relative', width: '500px', height: '500px', border: '1px solid black' }}>
         {Object.keys(players).map((id) => (

@@ -11,9 +11,14 @@ export default defineConfig({
       exclude: []
     })
   ],
+  preview: {
+    port: 8080,
+    strictPort: true
+  },
   server: {
-    host: true,
-    port: 3001
+    port: 8080,
+    strictPort: true,
+    host: true
   },
   define: {
     // global: {}
