@@ -6,7 +6,14 @@ console.log('iceServers:', iceServers);
 
 const app = express();
 const server = http.createServer(app);
-const io = geckos({iceServers: iceServers});
+const io = geckos({iceServers: [
+  { urls: 'stun:localhost:3478' },
+  {
+    urls: 'turn:localhost:3478',
+    username: 'turn_username',
+    credential: 'turn_password'
+  }
+]});
 
 io.addServer(server);
 

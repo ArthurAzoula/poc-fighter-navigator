@@ -18,3 +18,15 @@ services:
       - ./front:/usr/src/app
       - /usr/src/app/node_modules
     command: npm run dev
+  
+  turnserver:
+    build:
+      context: ./turnserver
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+    volumes:
+      - ./turnserver/turnserver.conf:/etc/turnserver.conf
+    command: ["turnserver", "-c", "/etc/turnserver.conf", "--log-file=/var/log/turnserver/turnserver.log", "--lt-cred-mech"]

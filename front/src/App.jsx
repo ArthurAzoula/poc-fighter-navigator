@@ -8,7 +8,14 @@ const App = () => {
   const [channel, setChannel] = useState(null);
 
   useEffect(() => {
-    const newChannel = geckos({ port: 3000 });
+    const newChannel = geckos({ port: 3000, iceServers: [
+      { urls: 'stun:localhost:3478' },
+      {
+        urls: 'turn:localhost:3478',
+        username: 'turn_username',
+        credential: 'turn_password'
+      }
+    ]});
     console.log('newChannel:', newChannel);
     newChannel.on('error', (error) => {
         console.error('Error:', error);
